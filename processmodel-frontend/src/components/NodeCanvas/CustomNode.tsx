@@ -8,6 +8,7 @@ interface CustomNodeData {
   onClick: (node: HierarchyNode) => void;
   isExpanded: boolean;
   isSelected: boolean;
+  isHighlighted?: boolean;
 }
 
 const levelConfig = {
@@ -42,7 +43,7 @@ const levelConfig = {
 };
 
 export const CustomNode: React.FC<NodeProps> = ({ data }) => {
-  const { node, onClick, isExpanded, isSelected } = data as unknown as CustomNodeData;
+  const { node, onClick, isExpanded, isSelected, isHighlighted = true } = data as unknown as CustomNodeData;
   const cfg = levelConfig[node.level];
   const m = node.metrics;
   const hasChildren = node.childCount > 0;
@@ -55,6 +56,7 @@ export const CustomNode: React.FC<NodeProps> = ({ data }) => {
         onClick={() => onClick(node)}
         style={{
           width: 232,
+          opacity: isHighlighted ? 1 : 0.3,
           background: 'linear-gradient(145deg, #161B27 0%, #111827 100%)',
           border: `1px solid ${isSelected ? cfg.accent : 'rgba(255,255,255,0.08)'}`,
           borderRadius: 14,

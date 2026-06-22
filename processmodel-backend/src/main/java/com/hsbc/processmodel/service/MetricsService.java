@@ -22,7 +22,9 @@ public class MetricsService {
     private final MarketRepository marketRepository;
     private final JourneyRepository journeyRepository;
 
-    public MetricsDTO getMetrics(String nodeType, Long nodeId) {
+    public MetricsDTO getMetrics(String nodeType, Long nodeId,
+                                 List<String> regions, List<String> countries,
+                                 List<Long> siteIds, String lob) {
         List<Long> processIds;
         String nodeName;
 
@@ -52,18 +54,22 @@ public class MetricsService {
                     .businessProcessBreakdown(List.of()).topMarkets(List.of()).build();
         }
 
-        long newReqs = requestRecordRepository.countByProcessIdsAndStatus(processIds, "NEW");
-        long inProgress = requestRecordRepository.countByProcessIdsAndStatus(processIds, "IN_PROGRESS");
-        long pending = requestRecordRepository.countByProcessIdsAndStatus(processIds, "PENDING");
-        long closed = requestRecordRepository.countClosed(processIds);
-        long rejected = requestRecordRepository.countByProcessIdsAndStatus(processIds, "REJECTED");
-        long pendingEod = requestRecordRepository.countPendingEod(processIds);
-        Double tat = requestRecordRepository.avgTatDays(processIds);
-        long closedWithinSla = requestRecordRepository.countClosedWithinSla(processIds);
+        boolean regionEmpty = regions == null || regions.isEmpty();
+        boolean countryEmpty = countries == null || countries.isEmpty();
+        boolean siteEmpty = siteIds == null || siteIds.isEmpty();
+
+        long newReqs = countWithFilters(processIds, "NEW", regions, regionEmpty, countries, countryEmpty, siteIds, siteEmpty);
+        long inProgress = countWithFilters(processIds, "IN_PROGRESS", regions, regionEmpty, countries, countryEmpty, siteIds, siteEmpty);
+        long pending = countWithFilters(processIds, "PENDING", regions, regionEmpty, countries, countryEmpty, siteIds, siteEmpty);
+        long closed = countClosedWithFilters(processIds, regions, regionEmpty, countries, countryEmpty, siteIds, siteEmpty);
+        long rejected = countWithFilters(processIds, "REJECTED", regions, regionEmpty, countries, countryEmpty, siteIds, siteEmpty);
+        long pendingEod = countPendingEodWithFilters(processIds, regions, regionEmpty, countries, countryEmpty, siteIds, siteEmpty);
+        Double tat = avgTatWithFilters(processIds, regions, regionEmpty, countries, countryEmpty, siteIds, siteEmpty);
+        long closedWithinSla = countClosedWithinSlaWithFilters(processIds, regions, regionEmpty, countries, countryEmpty, siteIds, siteEmpty);
         double att = closed > 0 ? (closedWithinSla * 100.0 / closed) : 0.0;
 
         List<MetricsDTO.BpBreakdown> bpBreakdown = buildBpBreakdown(nodeType, nodeId);
-        List<MetricsDTO.MarketRanking> topMarkets = buildTopMarkets(processIds);
+        List<MetricsDTO.MarketRanking> topMarkets = buildTopMarketsFiltered(processIds, regions, regionEmpty, countries, countryEmpty, siteIds, siteEmpty);
 
         return MetricsDTO.builder()
                 .nodeId(nodeId).nodeName(nodeName).nodeType(nodeType)
@@ -76,6 +82,61 @@ public class MetricsService {
                 .businessProcessBreakdown(bpBreakdown)
                 .topMarkets(topMarkets)
                 .build();
+    }
+
+    private long countWithFilters(List<Long> processIds, String status,
+                                  List<String> regions, boolean regionEmpty,
+                                  List<String> countries, boolean countryEmpty,
+                                  List<Long> siteIds, boolean siteEmpty) {
+        return requestRecordRepository.countByProcessIdsAndStatusFiltered(
+                processIds, status,
+                regionEmpty ? List.of("") : regions, regionEmpty,
+                countryEmpty ? List.of("") : countries, countryEmpty,
+                siteEmpty ? List.of(-1L) : siteIds, siteEmpty);
+    }
+
+    private long countClosedWithFilters(List<Long> processIds,
+                                        List<String> regions, boolean regionEmpty,
+                                        List<String> countries, boolean countryEmpty,
+                                        List<Long> siteIds, boolean siteEmpty) {
+        return requestRecordRepository.countClosedFiltered(
+                processIds,
+                regionEmpty ? List.of("") : regions, regionEmpty,
+                countryEmpty ? List.of("") : countries, countryEmpty,
+                siteEmpty ? List.of(-1L) : siteIds, siteEmpty);
+    }
+
+    private long countPendingEodWithFilters(List<Long> processIds,
+                                            List<String> regions, boolean regionEmpty,
+                                            List<String> countries, boolean countryEmpty,
+                                            List<Long> siteIds, boolean siteEmpty) {
+        return requestRecordRepository.countPendingEodFiltered(
+                processIds,
+                regionEmpty ? List.of("") : regions, regionEmpty,
+                countryEmpty ? List.of("") : countries, countryEmpty,
+                siteEmpty ? List.of(-1L) : siteIds, siteEmpty);
+    }
+
+    private Double avgTatWithFilters(List<Long> processIds,
+                                     List<String> regions, boolean regionEmpty,
+                                     List<String> countries, boolean countryEmpty,
+                                     List<Long> siteIds, boolean siteEmpty) {
+        return requestRecordRepository.avgTatDaysFiltered(
+                processIds,
+                regionEmpty ? List.of("") : regions, regionEmpty,
+                countryEmpty ? List.of("") : countries, countryEmpty,
+                siteEmpty ? List.of(-1L) : siteIds, siteEmpty);
+    }
+
+    private long countClosedWithinSlaWithFilters(List<Long> processIds,
+                                                 List<String> regions, boolean regionEmpty,
+                                                 List<String> countries, boolean countryEmpty,
+                                                 List<Long> siteIds, boolean siteEmpty) {
+        return requestRecordRepository.countClosedWithinSlaFiltered(
+                processIds,
+                regionEmpty ? List.of("") : regions, regionEmpty,
+                countryEmpty ? List.of("") : countries, countryEmpty,
+                siteEmpty ? List.of(-1L) : siteIds, siteEmpty);
     }
 
     private List<MetricsDTO.BpBreakdown> buildBpBreakdown(String nodeType, Long nodeId) {
@@ -112,8 +173,15 @@ public class MetricsService {
         return null;
     }
 
-    private List<MetricsDTO.MarketRanking> buildTopMarkets(List<Long> processIds) {
-        List<Object[]> stats = requestRecordRepository.getMarketSlaStats(processIds);
+    private List<MetricsDTO.MarketRanking> buildTopMarketsFiltered(List<Long> processIds,
+                                                                    List<String> regions, boolean regionEmpty,
+                                                                    List<String> countries, boolean countryEmpty,
+                                                                    List<Long> siteIds, boolean siteEmpty) {
+        List<Object[]> stats = requestRecordRepository.getMarketSlaStatsFiltered(
+                processIds,
+                regionEmpty ? List.of("") : regions, regionEmpty,
+                countryEmpty ? List.of("") : countries, countryEmpty,
+                siteEmpty ? List.of(-1L) : siteIds, siteEmpty);
         Map<Long, Market> marketMap = marketRepository.findAll().stream()
                 .collect(Collectors.toMap(Market::getId, m -> m));
 

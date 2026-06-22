@@ -58,3 +58,47 @@ export interface BreadcrumbItem {
   name: string;
   level: NodeLevel;
 }
+
+export interface FilterOptions {
+  regions: string[];
+  countries: CountryOption[];
+  journeys: JourneyOption[];
+  lobs: string[];
+  sites: SiteOption[];
+  processNames: ProcessOption[];
+}
+
+export interface CountryOption {
+  code: string;
+  name: string;
+  region: string;
+}
+
+export interface JourneyOption {
+  id: number;
+  name: string;
+  lob: string;
+}
+
+export interface SiteOption {
+  id: number;
+  name: string;
+  code: string;
+  region: string;
+  countryCode: string;
+}
+
+export interface ProcessOption {
+  id: number;
+  name: string;
+  code: string;
+}
+
+export interface ActiveFilters {
+  regions: string[];
+  countries: string[];     // country codes
+  journeyIds: number[];
+  lob: string;             // '' means All
+  siteIds: number[];
+  processName: string;     // text search
+}

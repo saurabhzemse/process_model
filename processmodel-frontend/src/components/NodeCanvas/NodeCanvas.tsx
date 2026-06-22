@@ -17,7 +17,7 @@ import {
 import dagre from '@dagrejs/dagre';
 import '@xyflow/react/dist/style.css';
 import { CustomNode } from './CustomNode';
-import { HierarchyNode } from '../../types';
+import { HierarchyNode, ActiveFilters } from '../../types';
 import { GraphEdge } from '../../App';
 import { RotateCcw } from 'lucide-react';
 
@@ -28,6 +28,7 @@ interface Props {
   selectedNodeKey: string | null;
   onNodeClick: (node: HierarchyNode) => void;
   isLoading: boolean;
+  filters?: ActiveFilters;
 }
 
 const nodeTypes = { custom: CustomNode };
@@ -64,6 +65,7 @@ const FlowInner: React.FC<Props> = ({
   selectedNodeKey,
   onNodeClick,
   isLoading,
+  filters,
 }) => {
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([]);
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -85,6 +87,7 @@ const FlowInner: React.FC<Props> = ({
   useEffect(() => {
     if (nodes.length === 0) return;
 
+    const processName = filters?.processName ?? '';
     const rawNodes: Node[] = nodes.map(n => ({
       id: `${n.level}-${n.id}`,
       type: 'custom',
@@ -94,6 +97,10 @@ const FlowInner: React.FC<Props> = ({
         onClick: onNodeClick,
         isExpanded: expandedIds.has(`${n.level}-${n.id}`),
         isSelected: `${n.level}-${n.id}` === selectedNodeKey,
+        isHighlighted:
+          !processName ||
+          n.name.toLowerCase().includes(processName.toLowerCase()) ||
+          n.code.toLowerCase().includes(processName.toLowerCase()),
       },
     }));
 
@@ -101,7 +108,7 @@ const FlowInner: React.FC<Props> = ({
     setFlowNodes(laid);
     setFlowEdges(builtEdges);
     setTimeout(() => fitView({ padding: 0.15, duration: 500 }), 60);
-  }, [nodes, builtEdges, expandedIds, selectedNodeKey, onNodeClick, fitView]);
+  }, [nodes, builtEdges, expandedIds, selectedNodeKey, onNodeClick, fitView, filters]);
 
   if (isLoading && nodes.length === 0) {
     return (
@@ -166,7 +173,7 @@ const FlowInner: React.FC<Props> = ({
 
 export const NodeCanvas: React.FC<Props> = (props) => (
   <ReactFlowProvider>
-    <div className="flex-1 relative">
+    <div className="flex-1 relative overflow-hidden">
       <FlowInner {...props} />
     </div>
   </ReactFlowProvider>

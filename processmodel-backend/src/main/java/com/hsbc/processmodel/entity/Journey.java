@@ -24,6 +24,9 @@ public class Journey {
     private String description;
     private String icon;
 
+    @Column(name = "lob")
+    private String lob;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

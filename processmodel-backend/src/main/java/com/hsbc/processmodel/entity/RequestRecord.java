@@ -49,4 +49,7 @@ public class RequestRecord {
     private Boolean slaBreached;
 
     private String notes;
+
+    @Column(name = "site_id")
+    private Long siteId;
 }
