@@ -1,0 +1,25 @@
+# Maven
+processmodel-backend/target/
+processmodel-backend/.mvn/
+*.class
+*.jar
+*.war
+
+# Node
+processmodel-frontend/node_modules/
+processmodel-frontend/dist/
+processmodel-frontend/.vite/
+
+# Logs
+*.log
+nohup.out
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Env
+*.env
+application-local.properties

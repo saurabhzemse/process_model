@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #F8F9FA;
+}
+
+.react-flow__node {
+  border-radius: 12px !important;
+}
+
+.react-flow__edge-path {
+  stroke: #DB0011 !important;
+  stroke-width: 2 !important;
+  opacity: 0.4;
+}
+
+.react-flow__handle {
+  opacity: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+}
+
+.react-flow__controls {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.react-flow__controls button {
+  border-bottom: 1px solid #E5E7EB !important;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F3F4F6;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
